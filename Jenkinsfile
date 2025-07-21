@@ -1,38 +1,37 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: Create an EC2 instance with a specific name
+pipeline {
+    agent any
 
-Parameters:
-  InstanceName:
-    Type: String
-    Description: Name for the EC2 instance
+    parameters {
+        string(name: 'STACK_NAME', defaultValue: 'ec2-stack', description: 'CloudFormation Stack Name')
+        string(name: 'TEMPLATE_FILE', defaultValue: 'ec2-instance.yml', description: 'CloudFormation Template File')
+        string(name: 'INSTANCE_NAME', defaultValue: 'fatima-ec2-instance', description: 'EC2 Instance Name')
+        choice(name: 'REGION', choices: ['us-east-1', 'us-west-1', 'ap-south-1'], description: 'AWS Region')
+    }
 
-Resources:
-  EC2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Enable SSH access
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
+    environment {
+        AWS_DEFAULT_REGION = "${params.REGION}"
+    }
 
-  EC2Instance:
-    Type: AWS::EC2::Instance
-    Properties:
-      InstanceType: t2.micro
-      ImageId: ami-0c7217cdde317cfec  # Amazon Linux 2 AMI (us-east-1)
-      SecurityGroupIds:
-        - !Ref EC2SecurityGroup
-      Tags:
-        - Key: Name
-          Value: !Ref InstanceName
+    stages {
+        stage('Checkout Repository') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pfatima/cloudformation-template-ec2.git'
+            }
+        }
 
-Outputs:
-  InstanceID:
-    Description: The Instance ID
-    Value: !Ref EC2Instance
-
-  PublicIP:
-    Description: Public IP of the Instance
-    Value: !GetAtt EC2Instance.PublicIp
+        stage('Deploy EC2 Stack') {
+            steps {
+                script {
+                    echo "Running CloudFormation deployment for EC2..."
+                    sh """
+                        aws cloudformation deploy \
+                          --stack-name ${params.STACK_NAME} \
+                          --template-file ${params.TEMPLATE_FILE} \
+                          --region ${params.REGION} \
+                          --parameter-overrides InstanceName=${params.INSTANCE_NAME}
+                    """
+                }
+            }
+        }
+    }
+}
