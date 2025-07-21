@@ -3,7 +3,7 @@ pipeline {
 
     parameters {
         string(name: 'STACK_NAME', defaultValue: 'ec2-stack', description: 'CloudFormation Stack Name')
-        string(name: 'TEMPLATE_FILE', defaultValue: 'ec2-instance.yml', description: 'CloudFormation Template File')
+        string(name: 'TEMPLATE_FILE', defaultValue: 'ec2-instance.yaml', description: 'CloudFormation Template File')
         string(name: 'INSTANCE_NAME', defaultValue: 'fatima-ec2-instance', description: 'EC2 Instance Name')
         choice(name: 'REGION', choices: ['us-east-1', 'us-west-1', 'ap-south-1'], description: 'AWS Region')
     }
